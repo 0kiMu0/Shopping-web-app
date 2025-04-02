@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Button, Modal, Box, TextField, Typography } from '@mui/material';
-import ItemCard from '../components/ItemCard';
-import '../App.css';
+import React, { useState } from "react";
+import { Button, Modal, Box, TextField, Typography } from "@mui/material";
+import ItemCard from "../components/ItemCard";
+import { useNavigate } from 'react-router-dom';
 
 type Item = {
   id: number;
@@ -10,75 +10,103 @@ type Item = {
 };
 
 const Dashboard: React.FC = () => {
-  const [items, setItems] = useState<Item[]>([]);
-  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<Item[]>(JSON.parse(localStorage.getItem('items') || '[]')); 
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [newItem, setNewItem] = useState<Item>({ id: 0, name: '', description: '' });
+  const [currentItem, setCurrentItem] = useState<Item>({ id: 0, name: "", description: "" });
 
-  const handleOpen = () => {
-    setNewItem({ id: Date.now(), name: '', description: '' });
+  const navigate = useNavigate();
+
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
     setIsEditing(false);
-    setOpen(true);
   };
-  const handleClose = () => setOpen(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewItem({ ...newItem, [e.target.name]: e.target.value });
+  const onAddItemClick = () => {
+    setCurrentItem({ id: Date.now(), name: "", description: "" });
+    handleOpenModal();
+  };
+
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentItem({ ...currentItem, [e.target.name]: e.target.value });
   };
 
   const handleAddItem = () => {
-    if (newItem.name.trim() === '' || newItem.description.trim() === '') return;
-    setItems([...items, newItem]);
-    handleClose();
+    if (currentItem.name.trim() === "" || currentItem.description.trim() === "") return;
+    const newItems = [...items, currentItem];
+    setItems(newItems);
+    localStorage.setItem('items', JSON.stringify(newItems));  
+    handleCloseModal();
+  };
+
+  const onSubmit = () => {
+    if (!isEditing) handleAddItem();
+    else handleEditItem();
+    handleCloseModal();
   };
 
   const handleDeleteItem = (id: number) => {
-    setItems(items.filter(item => item.id !== id));
+    const updatedItems = items.filter((item) => item.id !== id);
+    setItems(updatedItems);
+    localStorage.setItem('items', JSON.stringify(updatedItems));  
   };
 
-  const handleEditItem = (item: Item) => {
-    setNewItem(item);
+  const onEditClick = (item: Item) => {
     setIsEditing(true);
-    setOpen(true);
+    setCurrentItem(item);
+    handleOpenModal();
   };
 
-  const handleSaveEdit = () => {
-    setItems(items.map(item => (item.id === newItem.id ? newItem : item)));
-    handleClose();
+  const handleEditItem = () => {
+    const updatedItems = items.map((item) => (item.id === currentItem.id ? currentItem : item));
+    setItems(updatedItems);
+    localStorage.setItem('items', JSON.stringify(updatedItems));  
+  };
+
+  const handleViewDetails = (id: number) => {
+    navigate(`/item/${id}`);  
   };
 
   return (
     <div className="app-container">
       <h1 className="header">Shopping App</h1>
 
-      <Button className="add-item-btn" variant="contained" onClick={handleOpen}>
-        Add Item
-      </Button>
-
       <div className="item-grid">
-        {items.map(item => (
-          <ItemCard key={item.id} item={item} onDelete={handleDeleteItem} onEdit={handleEditItem} />
+        <div className="add-item-card" onClick={onAddItemClick}>
+          <span className="plus-sign">+</span>
+          <span className="add-item-text">Add item</span>
+        </div>
+
+        {items.map((item) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            onDelete={handleDeleteItem}
+            onEdit={onEditClick}
+            onViewDetails={handleViewDetails}  
+          />
         ))}
       </div>
 
-      <Modal open={open} onClose={handleClose}>
+      <Modal open={isModalOpen} onClose={handleCloseModal}>
         <Box className="modal-box">
-          <Typography variant="h6" component="h2">
-            {isEditing ? 'Edit Item' : 'Add New Item'}
+          <Typography variant="h6">
+            {isEditing ? "Edit Item" : "Add New Item"}
           </Typography>
           <TextField
             label="Item Name"
             name="name"
-            value={newItem.name}
-            onChange={handleInputChange}
+            value={currentItem.name}
+            onChange={onInputChange}
             fullWidth
             margin="normal"
           />
           <TextField
             label="Item Description"
             name="description"
-            value={newItem.description}
-            onChange={handleInputChange}
+            value={currentItem.description}
+            onChange={onInputChange}
             fullWidth
             margin="normal"
           />
@@ -86,10 +114,10 @@ const Dashboard: React.FC = () => {
             variant="contained"
             color="primary"
             fullWidth
-            sx={{ marginTop: '10px' }}
-            onClick={isEditing ? handleSaveEdit : handleAddItem}
+            sx={{ marginTop: "10px" }}
+            onClick={onSubmit}
           >
-            {isEditing ? 'Save Changes' : 'Add Item'}
+            {isEditing ? "Save Changes" : "Submit"}
           </Button>
         </Box>
       </Modal>
