@@ -2,18 +2,13 @@ import React, { useState } from "react";
 import { Button, Modal, Box, TextField, Typography } from "@mui/material";
 import ItemCard from "../components/ItemCard";
 import { useNavigate } from 'react-router-dom';
-
-type Item = {
-  id: number;
-  name: string;
-  description: string;
-};
+import { useStore } from "../store";  
 
 const Dashboard: React.FC = () => {
-  const [items, setItems] = useState<Item[]>(JSON.parse(localStorage.getItem('items') || '[]')); 
+  const { items, addItem, editItem, deleteItem } = useStore();  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentItem, setCurrentItem] = useState<Item>({ id: 0, name: "", description: "" });
+  const [currentItem, setCurrentItem] = useState({ id: 0, name: "", description: "" });
 
   const navigate = useNavigate();
 
@@ -34,9 +29,7 @@ const Dashboard: React.FC = () => {
 
   const handleAddItem = () => {
     if (currentItem.name.trim() === "" || currentItem.description.trim() === "") return;
-    const newItems = [...items, currentItem];
-    setItems(newItems);
-    localStorage.setItem('items', JSON.stringify(newItems));  
+    addItem(currentItem);
     handleCloseModal();
   };
 
@@ -46,22 +39,12 @@ const Dashboard: React.FC = () => {
     handleCloseModal();
   };
 
-  const handleDeleteItem = (id: number) => {
-    const updatedItems = items.filter((item) => item.id !== id);
-    setItems(updatedItems);
-    localStorage.setItem('items', JSON.stringify(updatedItems));  
-  };
-
-  const onEditClick = (item: Item) => {
-    setIsEditing(true);
-    setCurrentItem(item);
-    handleOpenModal();
-  };
-
   const handleEditItem = () => {
-    const updatedItems = items.map((item) => (item.id === currentItem.id ? currentItem : item));
-    setItems(updatedItems);
-    localStorage.setItem('items', JSON.stringify(updatedItems));  
+    editItem(currentItem);
+  };
+
+  const handleDeleteItem = (id: number) => {
+    deleteItem(id);
   };
 
   const handleViewDetails = (id: number) => {
@@ -83,7 +66,7 @@ const Dashboard: React.FC = () => {
             key={item.id}
             item={item}
             onDelete={handleDeleteItem}
-            onEdit={onEditClick}
+            onEdit={setCurrentItem}
             onViewDetails={handleViewDetails}  
           />
         ))}

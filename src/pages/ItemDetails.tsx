@@ -1,19 +1,14 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Box, Typography, Button } from "@mui/material";
-
-type Item = {
-  id: number;
-  name: string;
-  description: string;
-};
+import { useStore } from "../store"; 
 
 const ItemDetails: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>();  
+  const navigate = useNavigate();
+  
   const itemIdNumber = parseInt(itemId || "", 10);  
-
-  const items = JSON.parse(localStorage.getItem("items") || "[]");  
-  const item = items.find((item: Item) => item.id === itemIdNumber);  
+  const item = useStore((state) => state.getItem(itemIdNumber)); 
 
   if (!item) {
     return <div>Item not found</div>;
@@ -25,7 +20,7 @@ const ItemDetails: React.FC = () => {
       <Typography variant="h6">ID: {item.id}</Typography>
       <Typography variant="body1">Name: {item.name}</Typography>
       <Typography variant="body1">Description: {item.description}</Typography>
-      <Button variant="contained" color="primary" onClick={() => window.history.back()}>
+      <Button variant="contained" color="primary" onClick={() => navigate(-1)}>
         Back
       </Button>
     </Box>
